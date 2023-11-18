@@ -350,7 +350,7 @@ func (ctx *Context) Err() error {
 	return nil
 }
 
-func (ctx *Context) Value(key any) any {
+func (ctx *Context) Value(_ any) any {
 	return nil
 }
 
