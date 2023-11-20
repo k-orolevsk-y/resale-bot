@@ -44,6 +44,25 @@ func (ctx *Context) Abort() {
 	ctx.index = abortIndex
 }
 
+// AbortWith panic function
+func (ctx *Context) AbortWith(f interface{}, args ...interface{}) {
+	v := reflect.ValueOf(f)
+
+	var callArgs []reflect.Value
+	for _, arg := range args {
+		callArgs = append(callArgs, reflect.ValueOf(arg))
+	}
+
+	result := v.Call(callArgs)
+	for _, res := range result {
+		if err, ok := res.Interface().(error); ok && err != nil { // nolint
+			panic(err)
+		}
+	}
+
+	ctx.Abort()
+}
+
 /************************************/
 /********** CONTEXT HANDLERS ********/
 /************************************/
