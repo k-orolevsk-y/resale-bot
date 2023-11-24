@@ -2,6 +2,7 @@ package bot
 
 import (
 	"regexp"
+	"strings"
 )
 
 type methodTrees []*methodTree
@@ -16,13 +17,21 @@ func (trees methodTrees) get(method string) (*methodTree, bool) {
 	return nil, false
 }
 
-func (trees methodTrees) compileHandlersChain(method, query string) HandlersChain {
+func (trees methodTrees) compileHandlersChain(method, query, state string) HandlersChain {
 	var handlers HandlersChain
 	onlyMiddlewares := true
 
 	for _, tree := range trees {
 		if tree.method == method || tree.method == "*" {
 			for _, n := range tree.nodes {
+				if n.startPath != "" && !strings.HasPrefix(query, n.startPath) {
+					continue
+				}
+
+				if n.state != "" && n.state != state {
+					continue
+				}
+
 				if n.regex.MatchString(query) {
 					if tree.method != "*" {
 						onlyMiddlewares = false
@@ -46,9 +55,9 @@ type methodTree struct {
 	nodes  []*node
 }
 
-func (tree *methodTree) get(regex *regexp.Regexp) (*node, bool) {
+func (tree *methodTree) get(regex *regexp.Regexp, state, startPath string) (*node, bool) {
 	for _, n := range tree.nodes {
-		if n.regex.String() == regex.String() {
+		if n.regex.String() == regex.String() && n.state == state && n.startPath == startPath {
 			return n, true
 		}
 	}
@@ -57,7 +66,10 @@ func (tree *methodTree) get(regex *regexp.Regexp) (*node, bool) {
 }
 
 type node struct {
-	regex    *regexp.Regexp
+	regex     *regexp.Regexp
+	state     string
+	startPath string
+
 	handlers HandlersChain
 }
 
