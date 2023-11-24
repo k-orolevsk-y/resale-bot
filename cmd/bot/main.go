@@ -7,8 +7,14 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/app"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/commands"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/config"
-	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/keyboard/callback"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/keyboard/text"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/middlewares"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/repository"
+	"github.com/k-orolevsk-y/resale-bot/pkg/database/postgres"
 	"github.com/k-orolevsk-y/resale-bot/pkg/log"
 )
 
@@ -25,18 +31,29 @@ func main() {
 	logger.Debug("initialized logger")
 	logger.Debug("parsed config", zap.Any("config", config.Config))
 
-	b, err := bot.New(logger)
+	db, err := postgres.New()
 	if err != nil {
-		logger.Panic("error start bot", zap.Error(err))
+		logger.Panic("error initialized postgres", zap.Error(err))
 	}
+	rep := repository.New(db)
 
-	b.Run()
-	logger.Info("success started bot")
+	bot, err := app.New(logger, rep)
+	if err != nil {
+		logger.Panic("error initialized bot", zap.Error(err))
+	}
+	logger.Info("initialized bot")
+
+	middlewares.ConfigureMiddlewaresService(bot)
+	commands.ConfigureCommandsService(bot)
+	text.ConfigureKeyboardTextService(bot)
+	callback.ConfigureKeyboardCallbackService(bot)
+
+	bot.Run()
 
 	quitSignal := make(chan os.Signal, 1)
 	signal.Notify(quitSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	logger.Info("shutting down gracefully", zap.Any("signal", <-quitSignal))
-	b.StopReceivingUpdates()
+	bot.Stop()
 	logger.Info("successfully shutdown bot gracefully")
 }
