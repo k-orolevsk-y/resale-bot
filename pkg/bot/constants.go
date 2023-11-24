@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	regexFroAllStrings = regexp.MustCompile(".*")
+	regexForAllStrings = regexp.MustCompile(".*")
 
 	ErrInvalidChat            = fmt.Errorf("invalid chat")
 	ErrInvalidBigCallbackData = fmt.Errorf("invalid big callback data")
