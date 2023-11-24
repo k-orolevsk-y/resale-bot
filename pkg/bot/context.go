@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,7 +18,9 @@ type Context struct {
 	engine *Engine
 	update tgbotapi.Update
 
-	index    int8
+	index  int8
+	errors []error
+
 	handlers HandlersChain
 }
 
@@ -44,23 +48,59 @@ func (ctx *Context) Abort() {
 	ctx.index = abortIndex
 }
 
-// AbortWith panic function
-func (ctx *Context) AbortWith(f interface{}, args ...interface{}) {
-	v := reflect.ValueOf(f)
-
-	var callArgs []reflect.Value
+func (ctx *Context) AbortWith(args ...interface{}) {
 	for _, arg := range args {
-		callArgs = append(callArgs, reflect.ValueOf(arg))
-	}
-
-	result := v.Call(callArgs)
-	for _, res := range result {
-		if err, ok := res.Interface().(error); ok && err != nil { // nolint
+		if err, ok := arg.(error); ok && err != nil {
 			panic(err)
 		}
 	}
 
 	ctx.Abort()
+}
+
+func (ctx *Context) AbortWithMessage(message string) {
+	ctx.AbortWith(ctx.Message(message))
+}
+
+func (ctx *Context) AbortWithAnswer(text string) {
+	ctx.AbortWith(ctx.Answer(text))
+}
+
+func (ctx *Context) AbortWithCallback(showAlert bool, text string) {
+	ctx.AbortWith(ctx.Callback(showAlert, text))
+}
+
+func (ctx *Context) SetState(state string) error {
+	return ctx.engine.stateStorage.Add(strconv.FormatInt(ctx.From().ID, 10), state)
+}
+
+func (ctx *Context) MustSetState(state string) {
+	_ = ctx.SetState(state)
+}
+
+func (ctx *Context) ClearState() error {
+	return ctx.engine.stateStorage.Delete(strconv.FormatInt(ctx.From().ID, 10))
+}
+
+func (ctx *Context) MustClearState() {
+	_ = ctx.ClearState()
+}
+
+func (ctx *Context) MustReplyKeyboard(state string, rows ...[]tgbotapi.KeyboardButton) tgbotapi.ReplyKeyboardMarkup {
+	ctx.MustSetState(state)
+	return tgbotapi.NewReplyKeyboard(rows...)
+}
+
+/************************************/
+/*************** ERRORS *************/
+/************************************/
+
+func (ctx *Context) AddError(err error) {
+	ctx.errors = append(ctx.errors, err)
+}
+
+func (ctx *Context) Error() error {
+	return errors.Join(ctx.errors...)
 }
 
 /************************************/
@@ -91,7 +131,15 @@ func (ctx *Context) CurrentNameHandler() string {
 /************************************/
 
 func (ctx *Context) From() *tgbotapi.User {
-	return ctx.update.SentFrom()
+	from := *ctx.update.SentFrom()
+
+	if from.UserName == "" {
+		from.UserName = "-"
+	} else {
+		from.UserName = fmt.Sprintf("@%s", from.UserName)
+	}
+
+	return &from
 }
 
 func (ctx *Context) Chat() *tgbotapi.Chat {
@@ -184,6 +232,23 @@ func (ctx *Context) Query() string {
 	return ""
 }
 
+func (ctx *Context) State() string {
+	user := ctx.From()
+	userID := strconv.FormatInt(user.ID, 10)
+
+	state, err := ctx.engine.stateStorage.Get(userID)
+	if err != nil {
+		return ""
+	}
+
+	stateStr, ok := state.(string)
+	if !ok {
+		return ""
+	}
+
+	return stateStr
+}
+
 func (ctx *Context) GetMessage() *tgbotapi.Message {
 	if ctx.update.Message != nil {
 		return ctx.update.Message
@@ -221,6 +286,21 @@ func (ctx *Context) GetUpdateID() int {
 	return ctx.update.UpdateID
 }
 
+func (ctx *Context) GetChat(chatID int64) (tgbotapi.Chat, error) {
+	cfg := tgbotapi.ChatInfoConfig{
+		ChatConfig: tgbotapi.ChatConfig{
+			ChatID: chatID,
+		},
+	}
+
+	chat, err := ctx.engine.botAPI.GetChat(cfg)
+	if err != nil {
+		return tgbotapi.Chat{}, err
+	}
+
+	return chat, nil
+}
+
 /************************************/
 /************** RESPONSE ************/
 /************************************/
@@ -235,6 +315,17 @@ func (ctx *Context) Message(text string) error {
 	return err
 }
 
+func (ctx *Context) MessageOtherChat(chatID int64, text string) (tgbotapi.Message, error) {
+	message, err := ctx.buildMessage(text)
+	if err != nil {
+		return tgbotapi.Message{}, err
+	}
+	message.ChatID = chatID
+
+	msg, err := ctx.engine.botAPI.Send(message)
+	return msg, err
+}
+
 func (ctx *Context) MessageWithKeyboard(text string, keyboard interface{}) error {
 	message, err := ctx.buildMessage(text)
 	if err != nil {
@@ -244,6 +335,19 @@ func (ctx *Context) MessageWithKeyboard(text string, keyboard interface{}) error
 
 	_, err = ctx.engine.botAPI.Send(message)
 	return err
+}
+
+func (ctx *Context) MessageWithKeyboardOtherChat(chatID int64, text string, keyboard interface{}) (tgbotapi.Message, error) {
+	message, err := ctx.buildMessage(text)
+	if err != nil {
+		return tgbotapi.Message{}, err
+	}
+
+	message.ChatID = chatID
+	message.ReplyMarkup = keyboard
+
+	msg, err := ctx.engine.botAPI.Send(message)
+	return msg, err
 }
 
 func (ctx *Context) Answer(text string) error {
@@ -287,8 +391,8 @@ func (ctx *Context) CallbackDone() {
 }
 
 func (ctx *Context) BigCallbackData(template string, data interface{}) string {
-	id, err := ctx.engine.callbackStorage.Add(data)
-	if err != nil {
+	id := uuid.New()
+	if err := ctx.engine.callbackStorage.Add(id.String(), data); err != nil {
 		panic(fmt.Errorf("error add in callback storage: %w", err))
 	}
 
@@ -306,7 +410,8 @@ func (ctx *Context) GetCallbackTemplate() string {
 		return split[1]
 	}
 
-	return cbData
+	split := strings.Split(cbData, ":")
+	return split[0]
 }
 
 func (ctx *Context) GetCallbackData() (interface{}, error) {
@@ -322,7 +427,12 @@ func (ctx *Context) GetCallbackData() (interface{}, error) {
 			return nil, fmt.Errorf("error parse uuid of data: %w", err)
 		}
 
-		return ctx.engine.callbackStorage.Get(id)
+		return ctx.engine.callbackStorage.Get(id.String())
+	}
+
+	split := strings.Split(cbData, ":")
+	if len(split) > 1 {
+		return split[1], nil
 	}
 
 	return cbData, nil
@@ -347,7 +457,7 @@ func (ctx *Context) DeleteCallbackData() error {
 			return fmt.Errorf("error parse uuid of data: %w", err)
 		}
 
-		return ctx.engine.callbackStorage.Delete(id)
+		return ctx.engine.callbackStorage.Delete(id.String())
 	}
 
 	return nil
@@ -387,7 +497,10 @@ func (ctx *Context) buildMessage(text string) (tgbotapi.MessageConfig, error) {
 		return tgbotapi.MessageConfig{}, ErrInvalidChat
 	}
 
-	return tgbotapi.NewMessage(chat.ID, text), nil
+	message := tgbotapi.NewMessage(chat.ID, text)
+	message.ParseMode = "HTML"
+
+	return message, nil
 }
 
 func (ctx *Context) reset() {

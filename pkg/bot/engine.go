@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"sync"
@@ -13,10 +14,13 @@ import (
 
 type (
 	Engine struct {
+		Router
+
 		botAPI *tgbotapi.BotAPI
 		wg     sync.WaitGroup
 
-		callbackStorage CallbackStorage
+		stateStorage    Storage
+		callbackStorage Storage
 
 		trees           methodTrees
 		handlersNoRoute HandlersChain
@@ -42,68 +46,47 @@ func New(logger *zap.Logger) (*Engine, error) {
 		botAPI.Debug = true
 	}
 
-	return &Engine{
-		botAPI:          botAPI,
-		callbackStorage: newCallbackMemStorage(),
+	engine := &Engine{
+		botAPI: botAPI,
+
+		stateStorage:    newMemStorage(),
+		callbackStorage: newMemStorage(),
 
 		recovery: defaultRecovery,
-	}, nil
+	}
+	engine.Router = &RouterGroup{engine: engine}
+
+	return engine, nil
 }
 
-func (engine *Engine) SetCallbackStorage(storage CallbackStorage) {
+func (engine *Engine) SetStateStorage(storage Storage) {
+	engine.stateStorage = storage
+}
+
+func (engine *Engine) SetCallbackStorage(storage Storage) {
 	engine.callbackStorage = storage
 }
 
-func (engine *Engine) Use(middlewares ...HandlerFunc) *Engine {
-	engine.handle("*", regexFroAllStrings, middlewares)
+func (engine *Engine) SetCommands(commands ...tgbotapi.BotCommand) error {
+	cfg := tgbotapi.NewSetMyCommands(commands...)
+
+	_, err := engine.botAPI.Request(cfg)
+	return err
+}
+
+func (engine *Engine) Use(middlewares ...HandlerFunc) Router {
+	engine.Router.Use(middlewares...)
 	engine.rebuildNoRouteHandlers(middlewares)
 
-	return engine
+	return engine.Router
 }
 
-func (engine *Engine) Command(template string, handlers ...HandlerFunc) *Engine {
-	engine.handle("command", engine.mustCompileRegexByTemplate(template), handlers)
-	return engine
-}
-
-func (engine *Engine) Message(template string, handlers ...HandlerFunc) *Engine {
-	engine.handle("message", engine.mustCompileRegexByTemplate(template), handlers)
-	return engine
-}
-
-func (engine *Engine) Callback(template string, handlers ...HandlerFunc) *Engine {
-	engine.handle("callback", engine.mustCompileRegexByTemplate(template), handlers)
-	return engine
-}
-
-func (engine *Engine) CommandRegex(regex *regexp.Regexp, handlers ...HandlerFunc) *Engine {
-	engine.handle("command", regex, handlers)
-	return engine
-}
-
-func (engine *Engine) MessageRegex(regex *regexp.Regexp, handlers ...HandlerFunc) *Engine {
-	engine.handle("message", regex, handlers)
-	return engine
-}
-
-func (engine *Engine) CallbackRegex(regex *regexp.Regexp, handlers ...HandlerFunc) *Engine {
-	engine.handle("callback", regex, handlers)
-	return engine
-}
-
-func (engine *Engine) Handle(method string, regex *regexp.Regexp, handlers ...HandlerFunc) *Engine {
-	engine.handle(method, regex, handlers)
-	return engine
-}
-
-func (engine *Engine) NoRoute(handlers ...HandlerFunc) *Engine {
+func (engine *Engine) NoRoute(handlers ...HandlerFunc) {
 	engine.handlersNoRoute = append(engine.handlersNoRoute, handlers...)
-	return engine
 }
 
-func (engine *Engine) Recovery(handler RecoveryFunc) *Engine {
+func (engine *Engine) Recovery(handler RecoveryFunc) {
 	engine.recovery = handler
-	return engine
 }
 
 func (engine *Engine) Run() {
@@ -131,22 +114,6 @@ func (engine *Engine) allocateContext(update tgbotapi.Update) *Context {
 	return &Context{engine: engine, update: update}
 }
 
-func (engine *Engine) handle(method string, regex *regexp.Regexp, handlers HandlersChain) {
-	tree, ok := engine.trees.get(method)
-	if !ok {
-		tree = &methodTree{method: method, nodes: make([]*node, 0)}
-		engine.trees = append(engine.trees, tree)
-	}
-
-	root, ok := tree.get(regex)
-	if !ok {
-		root = new(node)
-		root.regex = regex
-		tree.nodes = append(tree.nodes, root)
-	}
-	root.addHandlers(handlers)
-}
-
 func (engine *Engine) rebuildNoRouteHandlers(handlers HandlersChain) {
 	engine.handlersNoRoute = append(engine.handlersNoRoute, handlers...)
 }
@@ -158,7 +125,7 @@ func (engine *Engine) mustCompileRegexByTemplate(template string) *regexp.Regexp
 func (engine *Engine) serveUpdate(ctx *Context) {
 	defer engine.wg.Done()
 
-	handlers := engine.trees.compileHandlersChain(ctx.Method(), ctx.Query())
+	handlers := engine.trees.compileHandlersChain(ctx.Method(), ctx.Query(), ctx.State())
 	if len(handlers) > 0 {
 		ctx.handlers = handlers
 	} else {
@@ -176,6 +143,12 @@ func (engine *Engine) serveRecovery(ctx *Context) {
 
 	if err := recover(); err != nil {
 		engine.recovery(ctx, err)
+
+		if e, ok := err.(error); ok && e != nil {
+			ctx.AddError(e)
+		} else {
+			ctx.AddError(errors.New(fmt.Sprint(e)))
+		}
 
 		if !ctx.IsAborted() {
 			ctx.Abort()
