@@ -1,4 +1,4 @@
-package repository
+package postgres
 
 import "github.com/k-orolevsk-y/resale-bot/pkg/database/postgres"
 
