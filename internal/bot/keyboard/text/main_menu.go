@@ -7,10 +7,21 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/constants"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/entities"
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
 func (s *service) Manager(ctx *bot.Context) {
+	dialog := entities.Dialog{
+		UserID: ctx.From().ID,
+	}
+
+	if err := s.rep.CreateDialog(ctx, &dialog); err != nil {
+		ctx.AddError(fmt.Errorf("rep.CreateDialog: %w", err))
+		ctx.AbortWithCallback(true, "Произошла ошибка при создании диалога.")
+		return
+	}
+
 	var successMessageIds []string
 
 	managerText := fmt.Sprintf("Поступила заявка на связь с менеджером.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName)

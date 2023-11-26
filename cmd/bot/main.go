@@ -12,9 +12,10 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/config"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/keyboard/callback"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/keyboard/text"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/messages"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/middlewares"
-	"github.com/k-orolevsk-y/resale-bot/internal/bot/repository"
-	"github.com/k-orolevsk-y/resale-bot/pkg/database/postgres"
+	repository "github.com/k-orolevsk-y/resale-bot/internal/bot/repository/postgres"
+	database "github.com/k-orolevsk-y/resale-bot/pkg/database/postgres"
 	"github.com/k-orolevsk-y/resale-bot/pkg/log"
 )
 
@@ -31,7 +32,7 @@ func main() {
 	logger.Debug("initialized logger")
 	logger.Debug("parsed config", zap.Any("config", config.Config))
 
-	db, err := postgres.New()
+	db, err := database.New()
 	if err != nil {
 		logger.Panic("error initialized postgres", zap.Error(err))
 	}
@@ -47,6 +48,7 @@ func main() {
 	commands.ConfigureCommandsService(bot)
 	text.ConfigureKeyboardTextService(bot)
 	callback.ConfigureKeyboardCallbackService(bot)
+	messages.ConfigureKeyboardMessagesService(bot)
 
 	bot.Run()
 
