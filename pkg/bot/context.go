@@ -74,12 +74,24 @@ func (ctx *Context) SetState(state string) error {
 	return ctx.engine.stateStorage.Add(strconv.FormatInt(ctx.From().ID, 10), state)
 }
 
+func (ctx *Context) SetOtherUserState(tgID int64, state string) error {
+	return ctx.engine.stateStorage.Add(strconv.FormatInt(tgID, 10), state)
+}
+
 func (ctx *Context) MustSetState(state string) {
 	_ = ctx.SetState(state)
 }
 
+func (ctx *Context) MustSetOtherUserState(tgID int64, state string) {
+	_ = ctx.SetOtherUserState(tgID, state)
+}
+
 func (ctx *Context) ClearState() error {
 	return ctx.engine.stateStorage.Delete(strconv.FormatInt(ctx.From().ID, 10))
+}
+
+func (ctx *Context) ClearOtherUserState(tgID int64) {
+	_ = ctx.engine.stateStorage.Delete(strconv.FormatInt(tgID, 10))
 }
 
 func (ctx *Context) MustClearState() {
@@ -350,6 +362,10 @@ func (ctx *Context) MessageWithKeyboardOtherChat(chatID int64, text string, keyb
 	return msg, err
 }
 
+func (ctx *Context) MessageByConfig(cfg tgbotapi.MessageConfig) (tgbotapi.Message, error) {
+	return ctx.engine.botAPI.Send(cfg)
+}
+
 func (ctx *Context) Answer(text string) error {
 	message, err := ctx.buildMessage(text)
 	if err != nil {
@@ -372,6 +388,34 @@ func (ctx *Context) AnswerWithKeyboard(text string, keyboard interface{}) error 
 
 	_, err = ctx.engine.botAPI.Send(message)
 	return err
+}
+
+func (ctx *Context) Edit(text string) error {
+	cfg := tgbotapi.NewEditMessageText(ctx.Chat().ID, ctx.GetMessage().MessageID, text)
+
+	_, err := ctx.engine.botAPI.Send(cfg)
+	return err
+}
+
+func (ctx *Context) EditKeyboard(keyboard tgbotapi.InlineKeyboardMarkup) error {
+	cfg := tgbotapi.NewEditMessageReplyMarkup(ctx.Chat().ID, ctx.GetMessage().MessageID, keyboard)
+
+	_, err := ctx.engine.botAPI.Send(cfg)
+	return err
+}
+
+func (ctx *Context) EditWithKeyboard(text string, keyboard tgbotapi.InlineKeyboardMarkup) error {
+	cfg := tgbotapi.NewEditMessageTextAndMarkup(ctx.Chat().ID, ctx.GetMessage().MessageID, text, keyboard)
+
+	_, err := ctx.engine.botAPI.Send(cfg)
+	return err
+}
+
+func (ctx *Context) CopyMessage(chatID, fromChatID int64, messageID int) (tgbotapi.Message, error) {
+	cfg := tgbotapi.NewCopyMessage(chatID, fromChatID, messageID)
+
+	msg, err := ctx.engine.botAPI.Send(cfg)
+	return msg, err
 }
 
 func (ctx *Context) Callback(showAlert bool, text string) error {
