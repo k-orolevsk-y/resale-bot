@@ -4,17 +4,17 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/constants"
-	"github.com/k-orolevsk-y/resale-bot/internal/bot/repository"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/repository/postgres"
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
 type App struct {
 	engine *bot.Engine
 	logger *zap.Logger
-	rep    *repository.Pg
+	rep    *postgres.Pg
 }
 
-func New(logger *zap.Logger, rep *repository.Pg) (*App, error) {
+func New(logger *zap.Logger, rep *postgres.Pg) (*App, error) {
 	engine, err := bot.New(logger)
 	if err != nil {
 		return nil, err
@@ -47,6 +47,6 @@ func (a *App) GetLogger() *zap.Logger {
 	return a.logger
 }
 
-func (a *App) GetRepository() *repository.Pg {
+func (a *App) GetRepository() *postgres.Pg {
 	return a.rep
 }
