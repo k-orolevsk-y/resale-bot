@@ -1,7 +1,8 @@
-package callback
+package messages
 
 import (
 	"context"
+	"regexp"
 
 	"go.uber.org/zap"
 
@@ -11,7 +12,6 @@ import (
 )
 
 type Repository interface {
-	EditDialog(ctx context.Context, dialog *entities.Dialog) error
 	GetDialogByTalkerID(context.Context, int64) (*entities.Dialog, error)
 }
 
@@ -20,17 +20,15 @@ type service struct {
 	logger *zap.Logger
 }
 
-func ConfigureKeyboardCallbackService(app *app.App) {
+func ConfigureKeyboardMessagesService(app *app.App) {
 	s := &service{
 		rep:    app.GetRepository(),
 		logger: app.GetLogger(),
 	}
 	engine := app.GetEngine()
 
-	engine.Callback("cancel_manager", s.CancelManager)
-	engine.Group("manager_", func(group bot.Router) {
-		group.Use(s.ManagerAccess)
-
-		group.Callback("manager_dialog_start", s.ManagerDialogStart)
+	engine.GroupState("manager_dialog", func(group bot.Router) {
+		group.MessageRegex(regexp.MustCompile(".*"), s.Dialog)
 	})
+
 }
