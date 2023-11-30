@@ -13,8 +13,15 @@ type Router interface {
 	MessageRegex(*regexp.Regexp, ...HandlerFunc) Router
 	CallbackRegex(*regexp.Regexp, ...HandlerFunc) Router
 
+	CommandAny(handlers ...HandlerFunc) Router
+	MessageAny(handlers ...HandlerFunc) Router
+	CallbackAny(handlers ...HandlerFunc) Router
+
+	MessageState(string, ...HandlerFunc) Router
+
 	Group(string, HandlerGroup) Router
 	GroupState(string, HandlerGroup) Router
+
 	Handle(string, *regexp.Regexp, ...HandlerFunc) Router
 }
 
@@ -73,6 +80,29 @@ func (group *RouterGroup) MessageRegex(regex *regexp.Regexp, handlers ...Handler
 
 func (group *RouterGroup) CallbackRegex(regex *regexp.Regexp, handlers ...HandlerFunc) Router {
 	group.handle("callback", regex, handlers)
+	return group
+}
+
+func (group *RouterGroup) CommandAny(handlers ...HandlerFunc) Router {
+	group.handle("command", regexForAllStrings, handlers)
+	return group
+}
+
+func (group *RouterGroup) MessageAny(handlers ...HandlerFunc) Router {
+	group.handle("message", regexForAllStrings, handlers)
+	return group
+}
+
+func (group *RouterGroup) CallbackAny(handlers ...HandlerFunc) Router {
+	group.handle("callback", regexForAllStrings, handlers)
+	return group
+}
+
+func (group *RouterGroup) MessageState(state string, handlers ...HandlerFunc) Router {
+	group.GroupState(state, func(group Router) {
+		group.MessageRegex(regexForAllStrings, handlers...)
+	})
+
 	return group
 }
 

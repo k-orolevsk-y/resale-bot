@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -20,6 +21,9 @@ type Context struct {
 
 	index  int8
 	errors []error
+
+	mx   sync.RWMutex
+	data map[string]interface{}
 
 	handlers HandlersChain
 }
@@ -90,7 +94,11 @@ func (ctx *Context) ClearState() error {
 	return ctx.engine.stateStorage.Delete(strconv.FormatInt(ctx.From().ID, 10))
 }
 
-func (ctx *Context) ClearOtherUserState(tgID int64) {
+func (ctx *Context) ClearOtherUserState(tgID int64) error {
+	return ctx.engine.stateStorage.Delete(strconv.FormatInt(tgID, 10))
+}
+
+func (ctx *Context) MustClearOtherUserState(tgID int64) {
 	_ = ctx.engine.stateStorage.Delete(strconv.FormatInt(tgID, 10))
 }
 
@@ -113,6 +121,25 @@ func (ctx *Context) AddError(err error) {
 
 func (ctx *Context) Error() error {
 	return errors.Join(ctx.errors...)
+}
+
+/************************************/
+/**************** DATA **************/
+/************************************/
+
+func (ctx *Context) Get(key string) (interface{}, bool) {
+	ctx.mx.RLock()
+	defer ctx.mx.RUnlock()
+
+	val, ok := ctx.data[key]
+	return val, ok
+}
+
+func (ctx *Context) Set(key string, val interface{}) {
+	ctx.mx.Lock()
+	defer ctx.mx.Unlock()
+
+	ctx.data[key] = val
 }
 
 /************************************/
@@ -313,6 +340,10 @@ func (ctx *Context) GetChat(chatID int64) (tgbotapi.Chat, error) {
 	return chat, nil
 }
 
+func (ctx *Context) GetBot() (tgbotapi.User, error) {
+	return ctx.engine.botAPI.GetMe()
+}
+
 /************************************/
 /************** RESPONSE ************/
 /************************************/
@@ -362,7 +393,7 @@ func (ctx *Context) MessageWithKeyboardOtherChat(chatID int64, text string, keyb
 	return msg, err
 }
 
-func (ctx *Context) MessageByConfig(cfg tgbotapi.MessageConfig) (tgbotapi.Message, error) {
+func (ctx *Context) MessageByConfig(cfg tgbotapi.Chattable) (tgbotapi.Message, error) {
 	return ctx.engine.botAPI.Send(cfg)
 }
 
@@ -392,6 +423,7 @@ func (ctx *Context) AnswerWithKeyboard(text string, keyboard interface{}) error 
 
 func (ctx *Context) Edit(text string) error {
 	cfg := tgbotapi.NewEditMessageText(ctx.Chat().ID, ctx.GetMessage().MessageID, text)
+	cfg.ParseMode = "HTML"
 
 	_, err := ctx.engine.botAPI.Send(cfg)
 	return err
@@ -406,6 +438,7 @@ func (ctx *Context) EditKeyboard(keyboard tgbotapi.InlineKeyboardMarkup) error {
 
 func (ctx *Context) EditWithKeyboard(text string, keyboard tgbotapi.InlineKeyboardMarkup) error {
 	cfg := tgbotapi.NewEditMessageTextAndMarkup(ctx.Chat().ID, ctx.GetMessage().MessageID, text, keyboard)
+	cfg.ParseMode = "HTML"
 
 	_, err := ctx.engine.botAPI.Send(cfg)
 	return err
@@ -416,6 +449,13 @@ func (ctx *Context) CopyMessage(chatID, fromChatID int64, messageID int) (tgbota
 
 	msg, err := ctx.engine.botAPI.Send(cfg)
 	return msg, err
+}
+
+func (ctx *Context) DeleteMessage(chatID int64, messageID int) error {
+	cfg := tgbotapi.NewDeleteMessage(chatID, messageID)
+
+	_, err := ctx.engine.botAPI.Request(cfg)
+	return err
 }
 
 func (ctx *Context) Callback(showAlert bool, text string) error {
@@ -549,4 +589,6 @@ func (ctx *Context) buildMessage(text string) (tgbotapi.MessageConfig, error) {
 
 func (ctx *Context) reset() {
 	ctx.index = -1
+	ctx.data = make(map[string]interface{})
+	ctx.mx = sync.RWMutex{}
 }
