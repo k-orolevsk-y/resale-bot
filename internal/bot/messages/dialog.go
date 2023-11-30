@@ -13,7 +13,7 @@ func (s *service) Dialog(ctx *bot.Context) {
 			ctx.AddError(fmt.Errorf("ctx.ClearState: %w", err))
 		}
 
-		ctx.AbortWithMessage("Диалог с менеджером был сломан, попробуйте ещё раз.")
+		ctx.AbortWithMessage("Во время диалога с менеджером произошла ошибка, попробуйте ещё раз.")
 		return
 	}
 
