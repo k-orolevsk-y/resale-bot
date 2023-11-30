@@ -1,4 +1,4 @@
-package callback
+package user
 
 import (
 	"database/sql"
@@ -12,10 +12,10 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) Repair(ctx *bot.Context) {
+func (service *keyboardCallbackUserService) Repair(ctx *bot.Context) {
 	stateID := fmt.Sprintf("repair_product_%d", ctx.From().ID)
 
-	state, err := s.rep.GetState(ctx, stateID, 2)
+	state, err := service.rep.GetState(ctx, stateID, 2)
 	if err != nil {
 		ctx.AbortWithCallback(true, "Не удалось получить промежуточную информацию.")
 		return
@@ -31,7 +31,7 @@ func (s *service) Repair(ctx *bot.Context) {
 	modelID := uuid.MustParse(state.Data.(string))
 	repairID := uuid.MustParse(cbData.(string))
 
-	repair, err := s.rep.GetRepairWithModelAndCategoryByID(ctx, modelID, repairID)
+	repair, err := service.rep.GetRepairWithModelAndCategoryByID(ctx, modelID, repairID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithCallback(true, "Данный ремонт пока что не принимается, попробуйте позже.")
@@ -46,7 +46,7 @@ func (s *service) Repair(ctx *bot.Context) {
 	ctx.Set("repair", repair)
 }
 
-func (s *service) RepairStartDialog(ctx *bot.Context) {
+func (service *keyboardCallbackUserService) RepairStartDialog(ctx *bot.Context) {
 	r, ok := ctx.Get("repair")
 	if !ok {
 		ctx.AddError(fmt.Errorf("error get repair by ctx.Get"))
@@ -55,7 +55,7 @@ func (s *service) RepairStartDialog(ctx *bot.Context) {
 	}
 	repair := r.(*entities.RepairWithModelAndCategory)
 
-	managers, err := s.rep.GetUserIdsWhoManager(ctx)
+	managers, err := service.rep.GetUserIdsWhoManager(ctx)
 	if err != nil {
 		ctx.AbortWithMessage("Произошла ошибка при получении списка менеджеров, для создания заявки")
 		return
@@ -65,13 +65,13 @@ func (s *service) RepairStartDialog(ctx *bot.Context) {
 		UserID: ctx.From().ID,
 	}
 
-	if err = s.rep.CreateDialog(ctx, &dialog); err != nil {
+	if err = service.rep.CreateDialog(ctx, &dialog); err != nil {
 		ctx.AddError(fmt.Errorf("rep.CreateDialog: %w", err))
 		ctx.AbortWithMessage("Произошла ошибка при создании заявки.")
 		return
 	}
 
-	managerText := fmt.Sprintf("Поступила заявка на <i>ремонт</i>.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>\n\nИнформация о ремонте: \n%s", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, repair.StringWithoutDescription())
+	managerText := fmt.Sprintf("Поступила заявка на <i>ремонт</i>.\n\nИмя и фамилия: <b>%service %service</b>\nТег: <b>%service</b>\n\nИнформация о ремонте: \n%service", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, repair.StringWithoutDescription())
 	managerKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Профиль пользователя", fmt.Sprintf("tg://user?id=%d", ctx.From().ID)),

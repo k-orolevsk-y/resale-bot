@@ -1,4 +1,4 @@
-package text
+package user
 
 import (
 	"database/sql"
@@ -12,10 +12,10 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) Sales(ctx *bot.Context) {
+func (service *keyboardTextUserService) Sales(ctx *bot.Context) {
 	var keyboard tgbotapi.ReplyKeyboardMarkup
 
-	products, err := s.rep.GetSaleProducts(ctx)
+	products, err := service.rep.GetSaleProducts(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			keyboard = tgbotapi.NewReplyKeyboard(
@@ -44,13 +44,13 @@ func (s *service) Sales(ctx *bot.Context) {
 	ctx.Abort()
 }
 
-func (s *service) SaleProduct(ctx *bot.Context) {
+func (service *keyboardTextUserService) SaleProduct(ctx *bot.Context) {
 	name := strings.Split(ctx.GetMessage().Text, " - ")
 	if len(name) < 2 {
 		name = append(name, "")
 	}
 
-	product, err := s.rep.GetProductWithoutCategoryType(ctx, name[0], name[1])
+	product, err := service.rep.GetProductWithoutCategoryType(ctx, name[0], name[1])
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithMessage("Товар закончился.")

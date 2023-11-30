@@ -1,4 +1,4 @@
-package text
+package user
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) TradeIn(ctx *bot.Context) {
+func (service *keyboardTextUserService) TradeIn(ctx *bot.Context) {
 	text := "♻️\nДля оценки устройства напишите пожалуйста ответы на вопросы:\n\n1. Модель устройства, объем памяти?\n2. Когда и Где покупали?\n3. В каком состоянии внешне (есть ли сколы, вмятины на корпусе? Если имеются, приложите фото)\n4. Имеется ли комплект (Коробка/Адаптер/Лайтнинг/Наушники/ Документы о покупке)\n5. Был ли в ремонтах? Все ли работает?\n6. Процент износа аккумулятора (можно посмотреть в настройках)"
 	keyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
@@ -26,8 +26,8 @@ func (s *service) TradeIn(ctx *bot.Context) {
 	ctx.Abort()
 }
 
-func (s *service) TradeInMessage(ctx *bot.Context) {
-	managers, err := s.rep.GetUserIdsWhoManager(ctx)
+func (service *keyboardTextUserService) TradeInMessage(ctx *bot.Context) {
+	managers, err := service.rep.GetUserIdsWhoManager(ctx)
 	if err != nil {
 		ctx.AbortWithMessage("Произошла ошибка при получении списка менеджеров, для создания заявки")
 		return
@@ -37,13 +37,13 @@ func (s *service) TradeInMessage(ctx *bot.Context) {
 		UserID: ctx.From().ID,
 	}
 
-	if err = s.rep.CreateDialog(ctx, &dialog); err != nil {
+	if err = service.rep.CreateDialog(ctx, &dialog); err != nil {
 		ctx.AddError(fmt.Errorf("rep.CreateDialog: %w", err))
 		ctx.AbortWithMessage("Произошла ошибка при создании заявки.")
 		return
 	}
 
-	managerText := fmt.Sprintf("Поступила заявка на <i>трейд-ин</i>.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName)
+	managerText := fmt.Sprintf("Поступила заявка на <i>трейд-ин</i>.\n\nИмя и фамилия: <b>%service %service</b>\nТег: <b>%service</b>", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName)
 	managerKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Профиль пользователя", fmt.Sprintf("tg://user?id=%d", ctx.From().ID)),
@@ -64,7 +64,7 @@ func (s *service) TradeInMessage(ctx *bot.Context) {
 		cfg.ReplyToMessageID = msg.MessageID
 
 		if _, err = ctx.MessageByConfig(cfg); err != nil {
-			s.logger.Error("error copy message for manager", zap.Error(err))
+			service.logger.Error("error copy message for manager", zap.Error(err))
 		}
 
 		success = true
@@ -85,5 +85,5 @@ func (s *service) TradeInMessage(ctx *bot.Context) {
 	if err = ctx.MessageWithKeyboard(text, keyboard); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.MessageWithKeyboard: %w", err))
 	}
-	s.HomeMenu(ctx)
+	service.HomeMenu(ctx)
 }
