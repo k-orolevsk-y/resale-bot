@@ -58,7 +58,7 @@ func (service *keyboardCallbackUserService) Reservation(ctx *bot.Context) {
 		return
 	}
 
-	managerText := fmt.Sprintf("<i>Зарезервирован товар</i>.\n\nИмя и фамилия: <b>%service %service</b>\nТег: <b>%service</b>\n\nИнформация о товаре: \n%service", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, product.StringWithoutDescription())
+	managerText := fmt.Sprintf("<i>Зарезервирован товар</i>.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>\n\nИнформация о товаре: \n%s", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, product.StringWithoutDescription())
 	managerKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Профиль пользователя", fmt.Sprintf("tg://user?id=%d", ctx.From().ID)),
@@ -67,7 +67,7 @@ func (service *keyboardCallbackUserService) Reservation(ctx *bot.Context) {
 			tgbotapi.NewInlineKeyboardButtonData("Начать диалог", fmt.Sprintf("manager_dialog_start_first:%d", ctx.From().ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Подтвердить резерв", fmt.Sprintf("manager_a_reserv:%d:%service", reservation.UserID, reservation.ProductID)), tgbotapi.NewInlineKeyboardButtonData("Отменить резерв", fmt.Sprintf("manager_c_reserv:%d:%service", reservation.UserID, reservation.ProductID)),
+			tgbotapi.NewInlineKeyboardButtonData("Подтвердить резерв", fmt.Sprintf("manager_a_reserv:%d:%s", reservation.UserID, reservation.ProductID)), tgbotapi.NewInlineKeyboardButtonData("Отменить резерв", fmt.Sprintf("manager_c_reserv:%d:%s", reservation.UserID, reservation.ProductID)),
 		),
 	)
 
@@ -86,7 +86,7 @@ func (service *keyboardCallbackUserService) Reservation(ctx *bot.Context) {
 		return
 	}
 
-	text := fmt.Sprintf("%service\n\n✅ Товар зарезервирован, ожидайте информации от менеджера.", product.String())
+	text := fmt.Sprintf("%s\n\n✅ Товар зарезервирован, ожидайте информации от менеджера.", product.String())
 	if err = ctx.Edit(text); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.EditWithKeyboard: %w", err))
 	}

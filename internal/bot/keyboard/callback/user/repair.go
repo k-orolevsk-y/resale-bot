@@ -71,7 +71,7 @@ func (service *keyboardCallbackUserService) RepairStartDialog(ctx *bot.Context) 
 		return
 	}
 
-	managerText := fmt.Sprintf("Поступила заявка на <i>ремонт</i>.\n\nИмя и фамилия: <b>%service %service</b>\nТег: <b>%service</b>\n\nИнформация о ремонте: \n%service", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, repair.StringWithoutDescription())
+	managerText := fmt.Sprintf("Поступила заявка на <i>ремонт</i>.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>\n\nИнформация о ремонте: \n%s", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, repair.StringWithoutDescription())
 	managerKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Профиль пользователя", fmt.Sprintf("tg://user?id=%d", ctx.From().ID)),
