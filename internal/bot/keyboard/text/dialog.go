@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/constants"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/tools"
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
@@ -37,9 +35,7 @@ func (s *service) ExitFromDialog(ctx *bot.Context) {
 		managerText string
 	)
 
-	keyboard := tgbotapi.NewReplyKeyboard(
-		constants.MainKeyboard...,
-	)
+	keyboard := constants.MainKeyboard()
 
 	if dialog.UserID == ctx.From().ID {
 		userText = "Диалог завершен."
@@ -56,6 +52,9 @@ func (s *service) ExitFromDialog(ctx *bot.Context) {
 	if _, err = ctx.MessageWithKeyboardOtherChat(dialog.ManagerID, managerText, keyboard); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.MessageWithKeyboardOtherChat: %w", err))
 	}
+
+	ctx.MustClearOtherUserState(dialog.UserID)
+	ctx.MustClearOtherUserState(dialog.ManagerID)
 
 	ctx.Abort()
 }

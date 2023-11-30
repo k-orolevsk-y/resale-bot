@@ -6,16 +6,26 @@ import (
 	"fmt"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/zap"
 
-	"github.com/k-orolevsk-y/resale-bot/internal/bot/constants"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/entities"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/tools"
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
 func (s *service) ManagerAccess(ctx *bot.Context) {
-	if !tools.In(ctx.From().ID, constants.Managers) {
-		ctx.AbortWithCallback(true, "У вас нет доступа к этим командами.")
+	u, ok := ctx.Get("user")
+	if !ok {
+		ctx.AddError(fmt.Errorf("error get user by ctx.Get"))
+		ctx.AbortWithCallback(true, "Не удалось проверить права доступа.")
+		return
+	}
+	user := u.(*entities.User)
+
+	if !user.IsManager {
+		s.logger.Info("user without manager right try use callback buttons", zap.Any("user", user))
+		ctx.AbortWithCallback(true, "У вас нет доступа.")
 	}
 }
 
@@ -51,6 +61,9 @@ func (s *service) ManagerDialogStart(ctx *bot.Context) {
 			ctx.AddError(fmt.Errorf("rep.GetDialogByTalkerID: %w", err))
 			ctx.AbortWithCallback(true, "Не удалось получить данные диалога.")
 		}
+		return
+	} else if dialog.EndedAt != nil {
+		ctx.AbortWithCallback(true, "Диалог уже завершен.")
 		return
 	}
 
@@ -112,7 +125,7 @@ func (s *service) CancelManager(ctx *bot.Context) {
 		return
 	}
 
-	if err = ctx.Edit(ctx.GetMessage().Text); err != nil {
+	if err = ctx.Edit("Заявка отменена"); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.Edit: %w", err))
 	}
 	ctx.AbortWithCallback(true, "Диалог отменен.")
