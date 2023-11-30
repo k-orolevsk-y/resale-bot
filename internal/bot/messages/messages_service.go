@@ -2,7 +2,6 @@ package messages
 
 import (
 	"context"
-	"regexp"
 
 	"go.uber.org/zap"
 
@@ -28,7 +27,7 @@ func ConfigureKeyboardMessagesService(app *app.App) {
 	engine := app.GetEngine()
 
 	engine.GroupState("manager_dialog", func(group bot.Router) {
-		group.MessageRegex(regexp.MustCompile(".*"), s.Dialog)
+		group.MessageAny(s.Dialog)
 	})
 
 }
