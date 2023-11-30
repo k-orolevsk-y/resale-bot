@@ -28,3 +28,12 @@ func (pg *Pg) GetUserByTgID(ctx context.Context, tgID int64) (*entities.User, er
 
 	return &user, err
 }
+
+func (pg *Pg) GetUserIdsWhoManager(ctx context.Context) ([]int64, error) {
+	var userIds []int64
+
+	query := "SELECT id FROM users WHERE is_manager = true"
+	err := pg.db.SelectContext(ctx, &userIds, query)
+
+	return userIds, err
+}
