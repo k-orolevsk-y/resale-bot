@@ -1,4 +1,4 @@
-package callback
+package user
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) Reservation(ctx *bot.Context) {
+func (service *keyboardCallbackUserService) Reservation(ctx *bot.Context) {
 	id, err := ctx.GetCallbackData()
 	if err != nil {
 		ctx.AddError(fmt.Errorf("ctx.GetCallbackData: %w", err))
@@ -18,14 +18,14 @@ func (s *service) Reservation(ctx *bot.Context) {
 		return
 	}
 
-	product, err := s.rep.GetProductByID(ctx, uuid.MustParse(id.(string)))
+	product, err := service.rep.GetProductByID(ctx, uuid.MustParse(id.(string)))
 	if err != nil {
 		ctx.AddError(fmt.Errorf("rep.GetProductByID: %w", err))
 		ctx.AbortWithCallback(true, "Не удалось получить информацию о товаре.")
 		return
 	}
 
-	exists, err := s.rep.ExistsReservationByProductID(ctx, product.ID)
+	exists, err := service.rep.ExistsReservationByProductID(ctx, product.ID)
 	if err != nil {
 		ctx.AddError(fmt.Errorf("rep.ExistsReservationByProductID: %w", err))
 		ctx.AbortWithCallback(true, "Не удалось получить техническую информацию.")
@@ -47,18 +47,18 @@ func (s *service) Reservation(ctx *bot.Context) {
 		ProductID: product.ID,
 	}
 
-	if err = s.rep.CreateReservation(ctx, &reservation); err != nil {
+	if err = service.rep.CreateReservation(ctx, &reservation); err != nil {
 		ctx.AddError(fmt.Errorf("rep.CreateReservation: %w", err))
 		ctx.AbortWithCallback(true, "Произошла ошибка при создании резервации.")
 	}
 
-	managers, err := s.rep.GetUserIdsWhoManager(ctx)
+	managers, err := service.rep.GetUserIdsWhoManager(ctx)
 	if err != nil {
 		ctx.AbortWithMessage("Произошла ошибка при получении списка менеджеров, для создания заявки")
 		return
 	}
 
-	managerText := fmt.Sprintf("<i>Зарезервирован товар</i>.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>\n\nИнформация о товаре: \n%s", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, product.StringWithoutDescription())
+	managerText := fmt.Sprintf("<i>Зарезервирован товар</i>.\n\nИмя и фамилия: <b>%service %service</b>\nТег: <b>%service</b>\n\nИнформация о товаре: \n%service", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName, product.StringWithoutDescription())
 	managerKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Профиль пользователя", fmt.Sprintf("tg://user?id=%d", ctx.From().ID)),
@@ -67,7 +67,7 @@ func (s *service) Reservation(ctx *bot.Context) {
 			tgbotapi.NewInlineKeyboardButtonData("Начать диалог", fmt.Sprintf("manager_dialog_start_first:%d", ctx.From().ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Подтвердить резерв", fmt.Sprintf("manager_a_reserv:%d:%s", reservation.UserID, reservation.ProductID)), tgbotapi.NewInlineKeyboardButtonData("Отменить резерв", fmt.Sprintf("manager_c_reserv:%d:%s", reservation.UserID, reservation.ProductID)),
+			tgbotapi.NewInlineKeyboardButtonData("Подтвердить резерв", fmt.Sprintf("manager_a_reserv:%d:%service", reservation.UserID, reservation.ProductID)), tgbotapi.NewInlineKeyboardButtonData("Отменить резерв", fmt.Sprintf("manager_c_reserv:%d:%service", reservation.UserID, reservation.ProductID)),
 		),
 	)
 
@@ -86,7 +86,7 @@ func (s *service) Reservation(ctx *bot.Context) {
 		return
 	}
 
-	text := fmt.Sprintf("%s\n\n✅ Товар зарезервирован, ожидайте информации от менеджера.", product.String())
+	text := fmt.Sprintf("%service\n\n✅ Товар зарезервирован, ожидайте информации от менеджера.", product.String())
 	if err = ctx.Edit(text); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.EditWithKeyboard: %w", err))
 	}
