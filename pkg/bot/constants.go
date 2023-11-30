@@ -9,6 +9,7 @@ var (
 	regexForAllStrings = regexp.MustCompile(".*")
 
 	ErrInvalidChat            = fmt.Errorf("invalid chat")
+	ErrWithoutStorages        = fmt.Errorf("not run without storages [use: engine.UseDefaultStorages()]")
 	ErrInvalidBigCallbackData = fmt.Errorf("invalid big callback data")
 )
 
