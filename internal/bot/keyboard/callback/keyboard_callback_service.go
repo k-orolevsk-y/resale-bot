@@ -3,6 +3,7 @@ package callback
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/app"
@@ -11,8 +12,18 @@ import (
 )
 
 type Repository interface {
-	EditDialog(ctx context.Context, dialog *entities.Dialog) error
+	CreateDialog(context.Context, *entities.Dialog) error
+	EditDialog(context.Context, *entities.Dialog) error
 	GetDialogByTalkerID(context.Context, int64) (*entities.Dialog, error)
+
+	GetUserIdsWhoManager(context.Context) ([]int64, error)
+	GetRepairWithModelAndCategoryByID(context.Context, uuid.UUID, uuid.UUID) (*entities.RepairWithModelAndCategory, error)
+	GetState(context.Context, string, int) (*entities.State, error)
+
+	CreateReservation(context.Context, *entities.Reservation) error
+	ExistsReservationByProductID(context.Context, uuid.UUID) (bool, error)
+
+	GetProductByID(ctx context.Context, productID uuid.UUID) (*entities.Product, error)
 }
 
 type service struct {
@@ -33,4 +44,7 @@ func ConfigureKeyboardCallbackService(app *app.App) {
 
 		group.Callback("manager_dialog_start", s.ManagerDialogStart)
 	})
+
+	engine.Callback("repair", s.Repair, s.RepairStartDialog)
+	engine.Callback("reservation", s.Reservation)
 }
