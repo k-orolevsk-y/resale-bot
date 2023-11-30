@@ -43,7 +43,7 @@ func (service *keyboardTextUserService) TradeInMessage(ctx *bot.Context) {
 		return
 	}
 
-	managerText := fmt.Sprintf("Поступила заявка на <i>трейд-ин</i>.\n\nИмя и фамилия: <b>%service %service</b>\nТег: <b>%service</b>", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName)
+	managerText := fmt.Sprintf("Поступила заявка на <i>трейд-ин</i>.\n\nИмя и фамилия: <b>%s %s</b>\nТег: <b>%s</b>", ctx.From().FirstName, ctx.From().LastName, ctx.From().UserName)
 	managerKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Профиль пользователя", fmt.Sprintf("tg://user?id=%d", ctx.From().ID)),
