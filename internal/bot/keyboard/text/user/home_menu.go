@@ -1,4 +1,4 @@
-package text
+package user
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) HomeMenu(ctx *bot.Context) {
+func (service *keyboardTextUserService) HomeMenu(ctx *bot.Context) {
 	text := "Главное меню"
 	keyboard := constants.MainKeyboard()
 

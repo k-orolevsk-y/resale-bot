@@ -1,4 +1,4 @@
-package text
+package user
 
 import (
 	"database/sql"
@@ -14,10 +14,10 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) CategoriesRepair(ctx *bot.Context) {
+func (service *keyboardTextUserService) CategoriesRepair(ctx *bot.Context) {
 	var keyboard tgbotapi.ReplyKeyboardMarkup
 
-	categories, err := s.rep.GetCategoriesRepair(ctx)
+	categories, err := service.rep.GetCategoriesRepair(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			keyboard = tgbotapi.NewReplyKeyboard(
@@ -46,10 +46,10 @@ func (s *service) CategoriesRepair(ctx *bot.Context) {
 	ctx.Abort()
 }
 
-func (s *service) ModelsRepair(ctx *bot.Context) {
+func (service *keyboardTextUserService) ModelsRepair(ctx *bot.Context) {
 	var keyboard tgbotapi.ReplyKeyboardMarkup
 
-	models, err := s.rep.GetModelsRepair(ctx, ctx.GetMessage().Text)
+	models, err := service.rep.GetModelsRepair(ctx, ctx.GetMessage().Text)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			keyboard = tgbotapi.NewReplyKeyboard(
@@ -78,10 +78,10 @@ func (s *service) ModelsRepair(ctx *bot.Context) {
 	ctx.Abort()
 }
 
-func (s *service) Repair(ctx *bot.Context) {
+func (service *keyboardTextUserService) Repair(ctx *bot.Context) {
 	var keyboard tgbotapi.ReplyKeyboardMarkup
 
-	repairs, err := s.rep.GetRepairs(ctx, ctx.GetMessage().Text)
+	repairs, err := service.rep.GetRepairs(ctx, ctx.GetMessage().Text)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			keyboard = tgbotapi.NewReplyKeyboard(
@@ -107,7 +107,7 @@ func (s *service) Repair(ctx *bot.Context) {
 		Data: repairs[0].ModelID,
 	}
 
-	if err = s.rep.CreateState(ctx, &state); err != nil {
+	if err = service.rep.CreateState(ctx, &state); err != nil {
 		ctx.AbortWithMessage("Ошибка назначения промежуточных значений.")
 		return
 	}
@@ -121,10 +121,10 @@ func (s *service) Repair(ctx *bot.Context) {
 	ctx.Abort()
 }
 
-func (s *service) RepairProduct(ctx *bot.Context) {
+func (service *keyboardTextUserService) RepairProduct(ctx *bot.Context) {
 	stateID := fmt.Sprintf("repair_product_%d", ctx.From().ID)
 
-	state, err := s.rep.GetState(ctx, stateID, 2)
+	state, err := service.rep.GetState(ctx, stateID, 2)
 	if err != nil {
 		ctx.AbortWithMessage("Не удалось получить промежуточную информацию.")
 		return
@@ -133,7 +133,7 @@ func (s *service) RepairProduct(ctx *bot.Context) {
 	modelID := uuid.MustParse(state.Data.(string))
 	repairName := strings.Split(ctx.GetMessage().Text, " - ")[0]
 
-	repair, err := s.rep.GetRepairWithModelAndCategory(ctx, modelID, repairName)
+	repair, err := service.rep.GetRepairWithModelAndCategory(ctx, modelID, repairName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithMessage("Данный ремонт пока что не принимается, попробуйте позже.")

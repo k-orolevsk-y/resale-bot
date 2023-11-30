@@ -1,4 +1,4 @@
-package text
+package user
 
 import (
 	"database/sql"
@@ -12,11 +12,11 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) Categories(cType int) bot.HandlerFunc {
+func (service *keyboardTextUserService) Categories(cType int) bot.HandlerFunc {
 	return func(ctx *bot.Context) {
 		var keyboard tgbotapi.ReplyKeyboardMarkup
 
-		categories, err := s.rep.GetCategoriesByType(ctx, cType)
+		categories, err := service.rep.GetCategoriesByType(ctx, cType)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				keyboard = tgbotapi.NewReplyKeyboard(
@@ -46,11 +46,11 @@ func (s *service) Categories(cType int) bot.HandlerFunc {
 	}
 }
 
-func (s *service) Producers(cType int) bot.HandlerFunc {
+func (service *keyboardTextUserService) Producers(cType int) bot.HandlerFunc {
 	return func(ctx *bot.Context) {
 		var keyboard tgbotapi.ReplyKeyboardMarkup
 
-		producers, err := s.rep.GetProducersByCategory(ctx, ctx.GetMessage().Text, cType)
+		producers, err := service.rep.GetProducersByCategory(ctx, ctx.GetMessage().Text, cType)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				keyboard = tgbotapi.NewReplyKeyboard(
@@ -80,11 +80,11 @@ func (s *service) Producers(cType int) bot.HandlerFunc {
 	}
 }
 
-func (s *service) Products(cType int) bot.HandlerFunc {
+func (service *keyboardTextUserService) Products(cType int) bot.HandlerFunc {
 	return func(ctx *bot.Context) {
 		var keyboard tgbotapi.ReplyKeyboardMarkup
 
-		products, err := s.rep.GetProductsByProducer(ctx, ctx.GetMessage().Text, cType)
+		products, err := service.rep.GetProductsByProducer(ctx, ctx.GetMessage().Text, cType)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				keyboard = tgbotapi.NewReplyKeyboard(
@@ -114,14 +114,14 @@ func (s *service) Products(cType int) bot.HandlerFunc {
 	}
 }
 
-func (s *service) Product(cType int) bot.HandlerFunc {
+func (service *keyboardTextUserService) Product(cType int) bot.HandlerFunc {
 	return func(ctx *bot.Context) {
 		name := strings.Split(ctx.GetMessage().Text, " - ")
 		if len(name) < 2 {
 			name = append(name, "")
 		}
 
-		product, err := s.rep.GetProduct(ctx, name[0], name[1], cType)
+		product, err := service.rep.GetProduct(ctx, name[0], name[1], cType)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				ctx.AbortWithMessage("Этот товар уже продали.")

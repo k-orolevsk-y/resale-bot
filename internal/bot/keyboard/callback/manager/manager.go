@@ -1,10 +1,9 @@
-package callback
+package manager
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
@@ -14,7 +13,7 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) ManagerAccess(ctx *bot.Context) {
+func (service *keyboardCallbackManagerService) ManagerAccess(ctx *bot.Context) {
 	u, ok := ctx.Get("user")
 	if !ok {
 		ctx.AddError(fmt.Errorf("error get user by ctx.Get"))
@@ -24,12 +23,12 @@ func (s *service) ManagerAccess(ctx *bot.Context) {
 	user := u.(*entities.User)
 
 	if !user.IsManager {
-		s.logger.Info("user without manager right try use callback buttons", zap.Any("user", user))
+		service.logger.Info("user without manager right try use callback buttons", zap.Any("user", user))
 		ctx.AbortWithCallback(true, "У вас нет доступа.")
 	}
 }
 
-func (s *service) ManagerDialogStart(ctx *bot.Context) {
+func (service *keyboardCallbackManagerService) ManagerDialogStart(ctx *bot.Context) {
 	data, err := ctx.GetCallbackData()
 	if err != nil {
 		ctx.AddError(fmt.Errorf("ctx.GetCallbackData: %w", err))
@@ -38,7 +37,7 @@ func (s *service) ManagerDialogStart(ctx *bot.Context) {
 		return
 	}
 
-	if _, err = s.rep.GetDialogByTalkerID(ctx, ctx.From().ID); err == nil {
+	if _, err = service.rep.GetDialogByTalkerID(ctx, ctx.From().ID); err == nil {
 		ctx.AbortWithCallback(true, "У вас уже есть диалог с пользователем, закончите его перед тем как начать другой.")
 		return
 	}
@@ -53,7 +52,7 @@ func (s *service) ManagerDialogStart(ctx *bot.Context) {
 		return
 	}
 
-	dialog, err := s.rep.GetDialogByTalkerID(ctx, userChat.ID)
+	dialog, err := service.rep.GetDialogByTalkerID(ctx, userChat.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithCallback(true, "Диалог уже завершен.")
@@ -68,7 +67,7 @@ func (s *service) ManagerDialogStart(ctx *bot.Context) {
 	}
 
 	dialog.ManagerID = ctx.From().ID
-	if err = s.rep.EditDialog(ctx, dialog); err != nil {
+	if err = service.rep.EditDialog(ctx, dialog); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.EditDialog: %w", err))
 		ctx.AbortWithCallback(true, "Не удалось обозначить вас как менеджера диалога.")
 		return
@@ -101,32 +100,4 @@ func (s *service) ManagerDialogStart(ctx *bot.Context) {
 		ctx.AddError(fmt.Errorf("ctx.MessageWithKeyboard: %w", err))
 	}
 	ctx.Abort()
-}
-
-func (s *service) CancelManager(ctx *bot.Context) {
-	dialog, err := s.rep.GetDialogByTalkerID(ctx, ctx.From().ID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			ctx.AbortWithCallback(true, "Диалог уже завершен.")
-		} else {
-			ctx.AddError(fmt.Errorf("rep.GetDialogByTalkerID: %w", err))
-			ctx.AbortWithCallback(true, "Не удалось получить данные диалога.")
-		}
-		return
-	} else if dialog.ManagerID != 0 {
-		ctx.AbortWithCallback(true, "Отменить диалог уже нельзя, он уже начался.")
-		return
-	}
-
-	dialog.EndedAt = tools.ProtoTime(time.Now())
-	if err = s.rep.EditDialog(ctx, dialog); err != nil {
-		ctx.AddError(fmt.Errorf("rep.EditDialog: %w", err))
-		ctx.AbortWithCallback(true, "Не удалось отменить диалог.")
-		return
-	}
-
-	if err = ctx.Edit("Заявка отменена"); err != nil {
-		ctx.AddError(fmt.Errorf("ctx.Edit: %w", err))
-	}
-	ctx.AbortWithCallback(true, "Диалог отменен.")
 }

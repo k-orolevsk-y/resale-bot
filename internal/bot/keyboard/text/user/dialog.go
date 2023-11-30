@@ -1,4 +1,4 @@
-package text
+package user
 
 import (
 	"database/sql"
@@ -11,8 +11,8 @@ import (
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
-func (s *service) ExitFromDialog(ctx *bot.Context) {
-	dialog, err := s.rep.GetDialogByTalkerID(ctx, ctx.From().ID)
+func (service *keyboardTextUserService) ExitFromDialog(ctx *bot.Context) {
+	dialog, err := service.rep.GetDialogByTalkerID(ctx, ctx.From().ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithAnswer("Диалог уже завершен.")
@@ -24,7 +24,7 @@ func (s *service) ExitFromDialog(ctx *bot.Context) {
 	}
 
 	dialog.EndedAt = tools.ProtoTime(time.Now())
-	if err = s.rep.EditDialog(ctx, dialog); err != nil {
+	if err = service.rep.EditDialog(ctx, dialog); err != nil {
 		ctx.AddError(fmt.Errorf("rep.EditDialog: %w", err))
 		ctx.AbortWithAnswer("Не удалось отменить диалог.")
 		return
