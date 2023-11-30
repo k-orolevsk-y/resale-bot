@@ -47,16 +47,17 @@ func New(logger *zap.Logger) (*Engine, error) {
 	}
 
 	engine := &Engine{
-		botAPI: botAPI,
-
-		stateStorage:    newMemStorage(),
-		callbackStorage: newMemStorage(),
-
+		botAPI:   botAPI,
 		recovery: defaultRecovery,
 	}
 	engine.Router = &RouterGroup{engine: engine}
 
 	return engine, nil
+}
+
+func (engine *Engine) UseDefaultStorages() {
+	engine.stateStorage = newMemStorage()
+	engine.callbackStorage = newMemStorage()
 }
 
 func (engine *Engine) SetStateStorage(storage Storage) {
@@ -90,6 +91,10 @@ func (engine *Engine) Recovery(handler RecoveryFunc) {
 }
 
 func (engine *Engine) Run() {
+	if engine.stateStorage == nil || engine.callbackStorage == nil {
+		panic(ErrWithoutStorages)
+	}
+
 	go func() {
 		cfg := tgbotapi.NewUpdate(0)
 		cfg.Timeout = 30
