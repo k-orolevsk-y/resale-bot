@@ -5,6 +5,7 @@ import (
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/constants"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/repository/postgres"
+	"github.com/k-orolevsk-y/resale-bot/internal/bot/repository/states"
 	"github.com/k-orolevsk-y/resale-bot/pkg/bot"
 )
 
@@ -25,6 +26,10 @@ func New(logger *zap.Logger, rep *postgres.Pg) (*App, error) {
 	}
 
 	app := &App{engine: engine, logger: logger, rep: rep}
+
+	engine.SetStateStorage(states.New(rep, 0))
+	engine.SetCallbackStorage(states.New(rep, 1))
+
 	engine.NoRoute(app.noRoute)
 	engine.Recovery(app.Recovery)
 
