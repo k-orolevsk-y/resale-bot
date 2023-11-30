@@ -7,8 +7,9 @@
         additional varchar(255) default null,
         operating_system int,
         description text,
-        photos text[],
+        photo text default null,
         price double precision default 0,
-        old_price double precision default 0
+        old_price double precision default 0,
+        is_sale bool default false
     );
 -- +goose Down
