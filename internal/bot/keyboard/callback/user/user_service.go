@@ -16,7 +16,7 @@ type Repository interface {
 	GetDialogByTalkerID(context.Context, int64) (*entities.Dialog, error)
 
 	GetUserIdsWhoManager(context.Context) ([]int64, error)
-	GetRepairWithModelAndCategoryByID(context.Context, uuid.UUID, uuid.UUID) (*entities.RepairWithModelAndCategory, error)
+	GetRepairByModelAndID(context.Context, string, uuid.UUID) (*entities.Repair, error)
 	GetState(context.Context, string, int) (*entities.State, error)
 
 	CreateReservation(context.Context, *entities.Reservation) error
@@ -38,6 +38,7 @@ func ConfigureKeyboardCallbackUserService(app *app.App) {
 
 	engine := app.GetEngine()
 
+	engine.Callback("cancel_manager", service.CancelManager)
 	engine.Callback("repair", service.Repair, service.RepairStartDialog)
 	engine.Callback("reservation", service.Reservation)
 }

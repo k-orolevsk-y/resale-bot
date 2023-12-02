@@ -28,16 +28,16 @@ func (service *keyboardCallbackUserService) Repair(ctx *bot.Context) {
 		return
 	}
 
-	modelID := uuid.MustParse(state.Data.(string))
+	modelName := state.Data.(string)
 	repairID := uuid.MustParse(cbData.(string))
 
-	repair, err := service.rep.GetRepairWithModelAndCategoryByID(ctx, modelID, repairID)
+	repair, err := service.rep.GetRepairByModelAndID(ctx, modelName, repairID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithCallback(true, "Данный ремонт пока что не принимается, попробуйте позже.")
 			return
 		} else {
-			ctx.AddError(fmt.Errorf("rep.GetRepairWithModelAndCategoryByID: %w", err))
+			ctx.AddError(fmt.Errorf("rep.GetRepairByModelAndID: %w", err))
 			ctx.AbortWithCallback(true, "Не удалось получить информацию.")
 			return
 		}
@@ -53,7 +53,7 @@ func (service *keyboardCallbackUserService) RepairStartDialog(ctx *bot.Context) 
 		ctx.AbortWithCallback(true, "Не удалось получить промежуточную информацию.")
 		return
 	}
-	repair := r.(*entities.RepairWithModelAndCategory)
+	repair := r.(*entities.Repair)
 
 	managers, err := service.rep.GetUserIdsWhoManager(ctx)
 	if err != nil {
