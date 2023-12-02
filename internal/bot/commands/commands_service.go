@@ -11,7 +11,13 @@ import (
 )
 
 type Repository interface {
+	FindUser(context.Context, interface{}) (*entities.User, error)
+	CreateState(context.Context, *entities.State) error
+
 	GetProductByID(context.Context, uuid.UUID) (*entities.Product, error)
+	GetCategoryByID(context.Context, uuid.UUID) (*entities.Category, error)
+	GetRepairByID(ctx context.Context, id uuid.UUID) (*entities.Repair, error)
+	GetReservationByID(context.Context, uuid.UUID) (*entities.ReservationWithAdditionalData, error)
 }
 
 type service struct {
@@ -26,6 +32,11 @@ func ConfigureCommandsService(app *app.App) {
 	}
 	engine := app.GetEngine()
 
-	engine.Command("start", s.Start, s.StartProduct)
+	engine.Command(
+		"start",
+		s.Start, s.StartProduct, s.StartManagerAccess,
+		s.StartManagerUser, s.StartManagerReservation, s.StartManagerCategory,
+		s.StartManagerProduct, s.StartManagerRepair, s.StartUnknownCommand,
+	)
 	engine.Command("manager", s.Manager)
 }
