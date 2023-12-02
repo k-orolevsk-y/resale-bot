@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/constants"
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/entities"
@@ -17,7 +16,7 @@ import (
 func (service *keyboardTextUserService) CategoriesRepair(ctx *bot.Context) {
 	var keyboard tgbotapi.ReplyKeyboardMarkup
 
-	categories, err := service.rep.GetCategoriesRepair(ctx)
+	producers, err := service.rep.GetProducersRepair(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			keyboard = tgbotapi.NewReplyKeyboard(
@@ -34,7 +33,7 @@ func (service *keyboardTextUserService) CategoriesRepair(ctx *bot.Context) {
 			return
 		}
 	} else {
-		keyboard = constants.CategoryRepairKeyboard(categories)
+		keyboard = constants.CategoryRepairKeyboard(producers)
 	}
 
 	if err = ctx.MessageWithKeyboard("Список производителей устройств для ремонта", keyboard); err != nil {
@@ -99,17 +98,17 @@ func (service *keyboardTextUserService) Repair(ctx *bot.Context) {
 		}
 	} else {
 		keyboard = constants.RepairsKeyboard(repairs)
-	}
 
-	state := entities.State{
-		ID:   fmt.Sprintf("repair_product_%d", ctx.From().ID),
-		Type: 2,
-		Data: repairs[0].ModelID,
-	}
+		state := entities.State{
+			ID:   fmt.Sprintf("repair_product_%d", ctx.From().ID),
+			Type: 2,
+			Data: repairs[0].ModelName,
+		}
 
-	if err = service.rep.CreateState(ctx, &state); err != nil {
-		ctx.AbortWithMessage("Ошибка назначения промежуточных значений.")
-		return
+		if err = service.rep.CreateState(ctx, &state); err != nil {
+			ctx.AbortWithMessage("Ошибка назначения промежуточных значений.")
+			return
+		}
 	}
 
 	if err = ctx.MessageWithKeyboard("Список возможных ремонтов", keyboard); err != nil {
@@ -130,22 +129,22 @@ func (service *keyboardTextUserService) RepairProduct(ctx *bot.Context) {
 		return
 	}
 
-	modelID := uuid.MustParse(state.Data.(string))
+	modelName := state.Data.(string)
 	repairName := strings.Split(ctx.GetMessage().Text, " - ")[0]
 
-	repair, err := service.rep.GetRepairWithModelAndCategory(ctx, modelID, repairName)
+	repair, err := service.rep.GetRepairByModelAndName(ctx, modelName, repairName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.AbortWithMessage("Данный ремонт пока что не принимается, попробуйте позже.")
 			return
 		} else {
-			ctx.AddError(fmt.Errorf("rep.GetRepairWithModelAndCategory: %w", err))
+			ctx.AddError(fmt.Errorf("rep.GetRepairByModelAndName: %w", err))
 			ctx.AbortWithMessage("Не удалось получить информацию.")
 			return
 		}
 	}
 
-	keyboard := constants.RepairKeyboard(&repair.Repair)
+	keyboard := constants.RepairKeyboard(repair)
 	if err = ctx.MessageWithKeyboard(repair.String(), keyboard); err != nil {
 		ctx.AddError(fmt.Errorf("ctx.MessageWithKeyboard: %w", err))
 	}

@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/app"
@@ -24,10 +23,10 @@ type Repository interface {
 	GetProduct(context.Context, string, string, int) (*entities.Product, error)
 	GetProductWithoutCategoryType(context.Context, string, string) (*entities.Product, error)
 
-	GetCategoriesRepair(context.Context) ([]entities.CategoryRepair, error)
-	GetModelsRepair(context.Context, string) ([]entities.ModelRepair, error)
+	GetProducersRepair(context.Context) ([]string, error)
+	GetModelsRepair(context.Context, string) ([]string, error)
 	GetRepairs(context.Context, string) ([]entities.Repair, error)
-	GetRepairWithModelAndCategory(context.Context, uuid.UUID, string) (*entities.RepairWithModelAndCategory, error)
+	GetRepairByModelAndName(context.Context, string, string) (*entities.Repair, error)
 
 	GetUserIdsWhoManager(context.Context) ([]int64, error)
 

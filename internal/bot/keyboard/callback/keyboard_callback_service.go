@@ -9,4 +9,6 @@ import (
 func ConfigureKeyboardCallbackService(app *app.App) {
 	user.ConfigureKeyboardCallbackUserService(app)
 	manager.ConfigureKeyboardCallbackManagerService(app)
+
+	app.GetEngine().Callback("noData", noData)
 }
