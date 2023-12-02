@@ -28,6 +28,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer logger.Sync() //nolint
 
 	logger.Debug("initialized logger")
 	logger.Debug("parsed config", zap.Any("config", config.Config))
@@ -36,7 +37,9 @@ func main() {
 	if err != nil {
 		logger.Panic("error initialized postgres", zap.Error(err))
 	}
+
 	rep := repository.New(db)
+	defer rep.Close()
 
 	bot, err := app.New(logger, rep)
 	if err != nil {
@@ -51,11 +54,11 @@ func main() {
 	messages.ConfigureKeyboardMessagesService(bot)
 
 	bot.Run()
+	defer bot.Stop()
 
 	quitSignal := make(chan os.Signal, 1)
 	signal.Notify(quitSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	logger.Info("shutting down gracefully", zap.Any("signal", <-quitSignal))
-	bot.Stop()
-	logger.Info("successfully shutdown bot gracefully")
+	defer logger.Info("successfully shutdown bot gracefully")
 }
