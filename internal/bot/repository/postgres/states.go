@@ -17,6 +17,17 @@ func (pg *Pg) CreateState(ctx context.Context, state *entities.State) error {
 	return err
 }
 
+func (pg *Pg) EditState(ctx context.Context, state *entities.State) error {
+	if err := state.EncodeData(); err != nil {
+		return err
+	}
+
+	query := "UPDATE states SET data = $1 WHERE id = $2 AND s_type = $3"
+	_, err := pg.db.ExecContext(ctx, query, state.Data, state.ID, state.Type)
+
+	return err
+}
+
 func (pg *Pg) GetState(ctx context.Context, id string, sType int) (*entities.State, error) {
 	var state entities.State
 
