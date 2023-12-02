@@ -29,3 +29,11 @@ set-manager:
     	  else \
     	  	echo "ERROR"; \
     	fi
+
+help:
+	@echo "Available targets:"
+	@echo "  - all:          Build and start the application."
+	@echo "  - build:        Build Docker containers."
+	@echo "  - up:           Start Docker containers in the background."
+	@echo "  - down:         Stop and remove Docker containers."
+	@echo "  - set-manager:  Set user a manager in bot. Usage: make set-manager id=<user_id>"
