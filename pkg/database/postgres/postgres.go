@@ -2,9 +2,7 @@ package postgres
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
-	"io"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -17,18 +15,6 @@ import (
 type PgSQL interface {
 	sqlx.ExtContext
 	sqlx.PreparerContext
-	io.Closer
-
-	Beginx() (TxPgSQL, error)
-	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	ExecContextWithReturnID(ctx context.Context, query string, args ...interface{}) (interface{}, error)
-}
-
-type TxPgSQL interface {
-	sqlx.ExtContext
-	sqlx.PreparerContext
-	driver.Tx
 
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
@@ -65,7 +51,7 @@ func New() (PgSQL, error) {
 	return &postgresDatabase{db}, err
 }
 
-func (db *postgresDatabase) Beginx() (TxPgSQL, error) {
+func (db *postgresDatabase) Begin() (PgSQL, error) {
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		return nil, err
