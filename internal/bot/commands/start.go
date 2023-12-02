@@ -25,10 +25,14 @@ func (s *service) Start(ctx *bot.Context) {
 
 		if args == "" {
 			defer ctx.Abort()
+			ctx.MustClearState()
 		}
 	} else {
 		if args != "" {
 			return
+		} else {
+			defer ctx.Abort()
+			ctx.MustClearState()
 		}
 
 		text = "Главное меню"
@@ -88,4 +92,8 @@ func (s *service) StartProduct(ctx *bot.Context) {
 	}
 
 	ctx.Abort()
+}
+
+func (s *service) StartUnknownCommand(ctx *bot.Context) {
+	ctx.AbortWithMessage("Неизвестная команда, попробуйте ещё раз.")
 }
