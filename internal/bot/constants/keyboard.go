@@ -2,11 +2,14 @@ package constants
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/k-orolevsk-y/resale-bot/internal/bot/entities"
 )
+
+// USER KEYBOARDS
 
 func MainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
@@ -21,20 +24,6 @@ func MainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("Связаться с менеджером"),
-		),
-	)
-}
-
-func ManagerKeyboard() tgbotapi.ReplyKeyboardMarkup {
-	return tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Пользователи"),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Товары"), tgbotapi.NewKeyboardButton("Ремонт"),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Главное меню"),
 		),
 	)
 }
@@ -133,7 +122,7 @@ func ProductKeyboard(botName string, product *entities.Product) tgbotapi.InlineK
 	)
 }
 
-func CategoryRepairKeyboard(categories []entities.CategoryRepair) tgbotapi.ReplyKeyboardMarkup {
+func CategoryRepairKeyboard(categories []string) tgbotapi.ReplyKeyboardMarkup {
 	var row int
 	keyboard := tgbotapi.NewReplyKeyboard()
 
@@ -142,7 +131,7 @@ func CategoryRepairKeyboard(categories []entities.CategoryRepair) tgbotapi.Reply
 			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow())
 		}
 
-		keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(category.Name))
+		keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(category))
 
 		if (i+1)%2 == 0 {
 			row++
@@ -153,7 +142,7 @@ func CategoryRepairKeyboard(categories []entities.CategoryRepair) tgbotapi.Reply
 	return keyboard
 }
 
-func ModelsRepairKeyboard(models []entities.ModelRepair) tgbotapi.ReplyKeyboardMarkup {
+func ModelsRepairKeyboard(models []string) tgbotapi.ReplyKeyboardMarkup {
 	var row int
 	keyboard := tgbotapi.NewReplyKeyboard()
 
@@ -162,7 +151,7 @@ func ModelsRepairKeyboard(models []entities.ModelRepair) tgbotapi.ReplyKeyboardM
 			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow())
 		}
 
-		keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(model.Name))
+		keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(model))
 
 		if (i+1)%2 == 0 {
 			row++
@@ -192,4 +181,326 @@ func RepairKeyboard(repair *entities.Repair) tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("Отправить заявку на ремонт", repairData),
 		),
 	)
+}
+
+// MANAGER KEYBOARDS
+
+func ManagerKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Пользователи"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Каталог"), tgbotapi.NewKeyboardButton("Ремонты"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Главное меню"),
+		),
+	)
+}
+
+func ManagerUserKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Список бронирований"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Сменить статус блокировки"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Сменить статус прав менеджера"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель менеджера"),
+		),
+	)
+}
+
+func ManagerCatalogKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Забронированные товары"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Категории"), tgbotapi.NewKeyboardButton("Товары"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель менеджера"),
+		),
+	)
+}
+
+func ManagerCatalogCategoriesKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Создать новую категорию"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Список категорий"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель каталога"),
+		),
+	)
+}
+
+func ManagerCatalogProductsKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Добавить новый товар"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Список товаров"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель каталога"),
+		),
+	)
+}
+
+func ManagerRepairsKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Добавить новый ремонт"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Список ремонтов"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель менеджера"),
+		),
+	)
+}
+
+func ManagerNewCategory() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Отмена"),
+		),
+	)
+}
+
+func ManagerNewCategoryType() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Новые"), tgbotapi.NewKeyboardButton("Б/У"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Отмена"),
+		),
+	)
+}
+
+func ManagerNewProductCategory(categories []entities.Category) tgbotapi.ReplyKeyboardMarkup {
+	var row int
+	keyboard := tgbotapi.NewReplyKeyboard()
+
+	for i, category := range categories {
+		if len(keyboard.Keyboard) <= row {
+			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow())
+		}
+
+		var name string
+		if category.Type == 0 {
+			name = fmt.Sprintf("%s [Новые]", category.Name)
+		} else {
+			name = fmt.Sprintf("%s [Б/У]", category.Name)
+		}
+
+		keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(name))
+
+		if (i+1)%2 == 0 {
+			row++
+		}
+	}
+
+	keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Отмена")))
+	return keyboard
+}
+
+func ManagerNewProductArrString(arr []string) tgbotapi.ReplyKeyboardMarkup {
+	if len(arr) < 1 {
+		return tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("Отмена"),
+			),
+		)
+	}
+
+	var row int
+	keyboard := tgbotapi.NewReplyKeyboard()
+
+	for i, elem := range arr {
+		if len(keyboard.Keyboard) <= row {
+			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow())
+		}
+
+		keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(elem))
+
+		if (i+1)%2 == 0 {
+			row++
+		}
+	}
+
+	keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Отмена")))
+	return keyboard
+}
+
+func ManagerSkip() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Пропустить"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Отмена"),
+		),
+	)
+}
+
+func ManagerEmpty() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Убрать"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Отмена"),
+		),
+	)
+}
+
+func ManagerExit() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Отмена"),
+		),
+	)
+}
+
+func ManagerNewProductIsSale() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Да"), tgbotapi.NewKeyboardButton("Нет"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Отмена"),
+		),
+	)
+}
+
+func ManagerCategoryKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить название"), tgbotapi.NewKeyboardButton("Изменить тип"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Удалить"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель категорий"),
+		),
+	)
+}
+
+func ManagerReservationKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить статус"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель каталога"),
+		),
+	)
+}
+
+func ManagerProductKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить категорию"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить производителя"), tgbotapi.NewKeyboardButton("Изменить модель"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить атрибуты"), tgbotapi.NewKeyboardButton("Изменить описание"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить цену"), tgbotapi.NewKeyboardButton("Изменить скидку"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить статус акции"), tgbotapi.NewKeyboardButton("Изменить фото"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Удалить"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель товаров"),
+		),
+	)
+}
+
+func ManagerRepairKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить производителя"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить модель"), tgbotapi.NewKeyboardButton("Изменить название"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Изменить описание"), tgbotapi.NewKeyboardButton("Изменить цену"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Удалить"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Вернуться в панель ремонтов"),
+		),
+	)
+}
+
+func ManagerReservationEditKeyboard(reservation *entities.Reservation) tgbotapi.ReplyKeyboardMarkup {
+	kb := tgbotapi.NewReplyKeyboard()
+
+	if reservation.Completed != -1 {
+		kb.Keyboard = append(kb.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Отменён")))
+	}
+
+	if reservation.Completed != 0 {
+		kb.Keyboard = append(kb.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Рассматривается")))
+	}
+
+	if reservation.Completed != 1 {
+		kb.Keyboard = append(kb.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Выполнен")))
+	}
+
+	kb.Keyboard = append(kb.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Назад")))
+	return kb
+}
+
+func PaginationKeyboard(data string, countItems, offset, countOnPage int) tgbotapi.InlineKeyboardMarkup {
+	kb := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(),
+	)
+
+	if offset > 0 {
+		kbData := fmt.Sprintf("%s:%d", data, offset-countOnPage)
+		kb.InlineKeyboard[0] = append(kb.InlineKeyboard[0], tgbotapi.NewInlineKeyboardButtonData("<-", kbData))
+	} else {
+		kb.InlineKeyboard[0] = append(kb.InlineKeyboard[0], tgbotapi.NewInlineKeyboardButtonData("|", "noData"))
+	}
+
+	currentPage := (offset / countOnPage) + 1
+	maxPage := int(math.Ceil(float64(countItems) / float64(countOnPage)))
+	mainText := fmt.Sprintf("%d / %d", currentPage, maxPage)
+
+	kb.InlineKeyboard[0] = append(kb.InlineKeyboard[0], tgbotapi.NewInlineKeyboardButtonData(mainText, "noData"))
+
+	if countItems > (offset + countOnPage) {
+		kbData := fmt.Sprintf("%s:%d", data, offset+countOnPage)
+		kb.InlineKeyboard[0] = append(kb.InlineKeyboard[0], tgbotapi.NewInlineKeyboardButtonData("->", kbData))
+	} else {
+		kb.InlineKeyboard[0] = append(kb.InlineKeyboard[0], tgbotapi.NewInlineKeyboardButtonData("|", "noData"))
+	}
+
+	return kb
 }
