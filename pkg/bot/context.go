@@ -135,6 +135,18 @@ func (ctx *Context) Get(key string) (interface{}, bool) {
 	return val, ok
 }
 
+func (ctx *Context) MustGet(key string) interface{} {
+	ctx.mx.RLock()
+	defer ctx.mx.RUnlock()
+
+	val, ok := ctx.data[key]
+	if !ok {
+		return nil
+	}
+
+	return val
+}
+
 func (ctx *Context) Set(key string, val interface{}) {
 	ctx.mx.Lock()
 	defer ctx.mx.Unlock()
