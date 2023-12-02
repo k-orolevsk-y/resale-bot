@@ -142,8 +142,6 @@ func (service *keyboardTextUserService) Product(cType int) bot.HandlerFunc {
 
 		if product.Photo.Valid {
 			cfg := tgbotapi.NewPhoto(ctx.Chat().ID, tgbotapi.FileID(product.Photo.String))
-			cfg.ParseMode = "HTML"
-
 			if _, err = ctx.MessageByConfig(cfg); err != nil {
 				ctx.AddError(fmt.Errorf("ctx.MessageByConfig: %w", err))
 			}

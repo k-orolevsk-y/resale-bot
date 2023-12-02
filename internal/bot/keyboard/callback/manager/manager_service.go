@@ -13,6 +13,11 @@ import (
 type Repository interface {
 	EditDialog(context.Context, *entities.Dialog) error
 	GetDialogByTalkerID(context.Context, int64) (*entities.Dialog, error)
+
+	GetProducts(context.Context) ([]entities.Product, error)
+	GetCategories(context.Context) ([]entities.Category, error)
+	GetAllRepairs(context.Context) ([]entities.Repair, error)
+	GetReservations(context.Context) ([]entities.ReservationWithAdditionalData, error)
 }
 
 type keyboardCallbackManagerService struct {
@@ -31,5 +36,9 @@ func ConfigureKeyboardCallbackManagerService(app *app.App) {
 		group.Use(service.ManagerAccess)
 
 		group.Callback("manager_dialog_start", service.ManagerDialogStart)
+		group.Callback("manager_reserv_products", service.CatalogReservationProducts)
+		group.Callback("manager_category", service.CatalogCategories)
+		group.Callback("manager_products", service.CatalogProducts)
+		group.Callback("manager_repairs", service.RepairsList)
 	})
 }
