@@ -12,7 +12,7 @@ import (
 
 func (s *service) Auth(ctx *bot.Context) {
 	user := ctx.From()
-	if user == nil {
+	if user.ID == 0 {
 		return
 	} else if user.IsBot {
 		ctx.Abort()
