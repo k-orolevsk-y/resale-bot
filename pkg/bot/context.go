@@ -288,6 +288,10 @@ func (ctx *Context) Query() string {
 
 func (ctx *Context) State() string {
 	user := ctx.From()
+	if user.ID == 0 {
+		return ""
+	}
+
 	userID := strconv.FormatInt(user.ID, 10)
 
 	state, err := ctx.engine.stateStorage.Get(userID)
