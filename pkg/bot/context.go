@@ -182,7 +182,10 @@ func (ctx *Context) CurrentNameHandler() string {
 /************************************/
 
 func (ctx *Context) From() *tgbotapi.User {
-	from := *ctx.update.SentFrom()
+	from := ctx.update.SentFrom()
+	if from == nil {
+		from = &tgbotapi.User{}
+	}
 
 	if from.UserName == "" {
 		from.UserName = "-"
@@ -190,7 +193,7 @@ func (ctx *Context) From() *tgbotapi.User {
 		from.UserName = fmt.Sprintf("@%s", from.UserName)
 	}
 
-	return &from
+	return from
 }
 
 func (ctx *Context) Chat() *tgbotapi.Chat {
